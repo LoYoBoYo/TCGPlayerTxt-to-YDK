@@ -23,6 +23,10 @@ def ConvertNamesToID(fname):
         exit(1)
 
 def ConvertListToYDK(parsedTCGP, fname):
+    if parsedTCGP[0][0] == -1:
+        print("Seems like the file is not in the correct format, only txt files from TCGPlayer will work.")
+        exit(1)
+
     newName = fname[:len(fname)-4] + ".ydk"
     ydkFile = open(newName, "w+")
     ydkFile.write("#extra\n")
@@ -43,7 +47,6 @@ def ConvertListToYDK(parsedTCGP, fname):
                 i += 1
                 ydkFile.write("\n!side\n")
         i += 1
-
 
 def main():
     fname = input("TCGPlayer text file name or path: ")
