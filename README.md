@@ -3,6 +3,10 @@ Converts a TCGPlayer Decklist text file into a .ydk file... If that's something 
 
 Requires the requests module (https://pypi.org/project/requests/)
 
+Known Issues:
+
+1. Main deck is not imported into Dueling Book, only Extra and Side deck.
+
 Future Plans:
 
 - Adapt for other decklist txt file styles, if the need be.
