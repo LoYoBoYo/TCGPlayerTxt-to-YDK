@@ -1,7 +1,6 @@
 import requests
 
 api_get = requests.get('https://db.ygoprodeck.com/api/v7/cardinfo.php')
-
 api_json = api_get.json()
 
 def getID(cname):
@@ -12,13 +11,18 @@ def getID(cname):
 
 def ConvertNamesToID(fname):
     parsedTCGP = []
-    with open(fname, 'r') as tcgpFile:
-        for line in tcgpFile:
-            cid = getID(line[2:len(line)].rstrip())
-            parsedTCGP.append((cid, line[0]))
-    return parsedTCGP
+    try:
+        with open(fname, 'r') as tcgpFile:
+            for line in tcgpFile:
+                cid = getID(line[2:len(line)].rstrip())
+                parsedTCGP.append((cid, line[0]))
+        return parsedTCGP
 
-def ConvertToYDK(parsedTCGP, fname):
+    except OSError:
+        print(f"Can't open {fname}!\nCheck spelling or make sure the file exists.")
+        exit(1)
+
+def ConvertListToYDK(parsedTCGP, fname):
     newName = fname[:len(fname)-4] + ".ydk"
     ydkFile = open(newName, "w+")
     ydkFile.write("#extra\n")
@@ -43,8 +47,11 @@ def ConvertToYDK(parsedTCGP, fname):
 
 def main():
     fname = input("TCGPlayer text file name or path: ")
+    if fname[len(fname)-4:] != ".txt":
+        print("Not a TCGPlayer txt file or you missed the file extension!")
+        exit(1)
     cidList = ConvertNamesToID(fname)
-    ConvertToYDK(cidList, fname)
+    ConvertListToYDK(cidList, fname)
     print("File converted successfully!")
 
 if __name__ == "__main__":
