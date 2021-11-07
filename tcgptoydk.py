@@ -22,31 +22,33 @@ def ConvertNamesToID(fname):
         print(f"Can't open {fname}!\nCheck spelling or make sure the file exists.")
         exit(1)
 
-def ConvertListToYDK(parsedTCGP, fname):
+def ListToDecktionary(parsedTCGP):
+    TCGP_ORDER = ["#extra","#main","!side"]
+    decktionary = {"#extra":[],"#main":[],"!side":[]}
+    i = 0
     if parsedTCGP[0][0] == -1:
         print("Seems like the file is not in the correct format, only txt files from TCGPlayer will work.")
         exit(1)
 
+    for section in TCGP_ORDER:     
+        while i < len(parsedTCGP) and parsedTCGP[i][0] != -1:
+            decktionary[section].append(parsedTCGP[i])
+            i += 1
+        i += 2
+    return decktionary
+
+def ConvertDecktionaryToYDK(decktionary, fname):
+    YDK_ORDER = ["#main", "#extra", "!side"]
     newName = fname[:len(fname)-4] + ".ydk"
-    ydkFile = open(newName, "w+")
-    ydkFile.write("#extra\n")
-    firstDiv = True
-    i = 0
-    while i < len(parsedTCGP):
-        multi = 0
-        if parsedTCGP[i][0] != -1:
-            while(multi < int(parsedTCGP[i][1])):
-                ydkFile.write(str(parsedTCGP[i][0])+'\n')
-                multi += 1
-        else:
-            if firstDiv:
-                i += 1
-                ydkFile.write("\n#main\n")
-                firstDiv = False
-            else:
-                i += 1
-                ydkFile.write("\n!side\n")
-        i += 1
+    with open(newName, "w+") as ydkFile:
+        for section in YDK_ORDER:
+            ydkFile.write(f"{section}\n")
+            for card in decktionary[section]:
+                multi = 0
+                while(multi < int(card[1])):
+                    ydkFile.write(str(card[0])+'\n')
+                    multi += 1
+            ydkFile.write('\n')
 
 def main():
     fname = input("TCGPlayer text file name or path: ")
@@ -54,7 +56,8 @@ def main():
         print("Not a TCGPlayer txt file or you missed the file extension!")
         exit(1)
     cidList = ConvertNamesToID(fname)
-    ConvertListToYDK(cidList, fname)
+    decktionary = ListToDecktionary(cidList)
+    ConvertDecktionaryToYDK(decktionary, fname)
     print("File converted successfully!")
 
 if __name__ == "__main__":
