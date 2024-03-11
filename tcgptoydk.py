@@ -71,15 +71,22 @@ def ConvertDecktionaryToYDK(decktionary, fname):
             ydkFile.write('\n')
 
 def main():
-    fname = input("TCGPlayer text file name or path: ")
-    if fname[len(fname)-4:] != ".txt":
-        print("Not a TCGPlayer txt file or you missed the file extension!")
-        exit(1)
+    fnames = input("TCGPlayer text file names or paths (comma separated for multiple): ")
+    fnames = fnames.split(',')
 
-    cidList = ConvertNamesToID_New(fname)
-    decktionary = ListToDecktionary(cidList)
-    ConvertDecktionaryToYDK(decktionary, fname)
-    print("File converted successfully!")
+    for fname in fnames:
+        fname = fname.strip()  # remove leading and trailing whitespaces
+        if fname[len(fname)-4:] != ".txt":
+            print(f"Not a TCGPlayer txt file or you missed the file extension for {fname}!")
+            continue
+
+        try:
+            cidList = ConvertNamesToID_New(fname)
+            decktionary = ListToDecktionary(cidList)
+            ConvertDecktionaryToYDK(decktionary, fname)
+            print(f"File {fname} converted successfully!")
+        except Exception as e:
+            print(f"Failed to convert {fname}. Error: {str(e)}")
 
 
 if __name__ == "__main__":
