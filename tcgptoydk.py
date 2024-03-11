@@ -1,48 +1,48 @@
 import requests
 from urllib.parse import quote_plus
 
-'''
-TCGPlayerTxt-to-YDK REDUX
-What's New?:
-- Internal data structure overhaul 
-- API request overhaul
-- Added comments :D
-'''
-
 def getID(cname, api_json):
     for card in api_json["data"]:
         if cname.lower() == card["name"].lower():
             return card["id"]
     return -1
 
+def build_request_url(cnames):
+    base_url = "https://db.ygoprodeck.com/api/v7/cardinfo.php?name="
+    url_parts = [quote_plus(cname) for cname in cnames]
+    return base_url + "|".join(url_parts)
+
+def send_api_request(url):
+    response = requests.get(url)
+    response.raise_for_status()  # raise an exception if the request failed
+    return response.json()
+
+def check_file_extension(fname):
+    if not fname.endswith(".txt"):
+        raise ValueError(f"Not a TCGPlayer txt file or you missed the file extension for {fname}!")
+
 def ConvertNamesToID_New(fname):
-    request_URL = "https://db.ygoprodeck.com/api/v7/cardinfo.php?name="
     parsedTCGP = []
-    
-    #Open file to read, create api request URL and create intermidiary list before name-to-ID
+    cnames = []
+
     try:
         with open(fname, 'r') as tcgpFile:
             for line in tcgpFile:
                 cname = line[2:len(line)].rstrip()
-                request_URL += f"{quote_plus(cname)}|"
+                cnames.append(cname)
                 parsedTCGP.append([cname, line[0]])
-    
     except OSError:
         print(f"Can't open {fname}!\nCheck name/path spelling, file is from TCGPlayer or make sure the file exists.")
         exit(1) 
 
-    #Condensed API call and name-to-ID conversion 
-    request_URL = request_URL[:-1]
-    api_get = requests.get(request_URL)
-    api_json = api_get.json()
+    request_URL = build_request_url(cnames)
+    api_json = send_api_request(request_URL)
     for card in parsedTCGP:
         card[0] = getID(card[0], api_json)
 
     return parsedTCGP
 
 def ListToDecktionary(parsedTCGP):
-    #This function only exits to compensate for Dueling Book refusing to properly import YDK files with content in a different order.
-    #Makes reorganizing the final file easier.
     TCGP_ORDER = ["#extra","#main","!side"]
     decktionary = {"#extra":[],"#main":[],"!side":[]}
     i = 0
@@ -57,18 +57,18 @@ def ListToDecktionary(parsedTCGP):
         i += 2
     return decktionary
 
+def write_to_file(ydkFile, section, cards):
+    ydkFile.write(f"{section}\n")
+    for card in cards:
+        ydkFile.write((str(card[0]) + '\n') * int(card[1]))
+    ydkFile.write('\n')
+
 def ConvertDecktionaryToYDK(decktionary, fname):
     YDK_ORDER = ["#main", "#extra", "!side"]
     newName = fname[:len(fname)-4] + ".ydk"
     with open(newName, "w+") as ydkFile:
         for section in YDK_ORDER:
-            ydkFile.write(f"{section}\n")
-            for card in decktionary[section]:
-                multi = 0
-                while(multi < int(card[1])):
-                    ydkFile.write(str(card[0])+'\n')
-                    multi += 1
-            ydkFile.write('\n')
+            write_to_file(ydkFile, section, decktionary[section])
 
 def main():
     fnames = input("TCGPlayer text file names or paths (comma separated for multiple): ")
@@ -76,11 +76,8 @@ def main():
 
     for fname in fnames:
         fname = fname.strip()  # remove leading and trailing whitespaces
-        if fname[len(fname)-4:] != ".txt":
-            print(f"Not a TCGPlayer txt file or you missed the file extension for {fname}!")
-            continue
-
         try:
+            check_file_extension(fname)
             cidList = ConvertNamesToID_New(fname)
             decktionary = ListToDecktionary(cidList)
             ConvertDecktionaryToYDK(decktionary, fname)
@@ -88,6 +85,5 @@ def main():
         except Exception as e:
             print(f"Failed to convert {fname}. Error: {str(e)}")
 
-
 if __name__ == "__main__":
-    main()  
+    main()
